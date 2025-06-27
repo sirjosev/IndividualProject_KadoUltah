@@ -9,6 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mapContainer = document.getElementById('map-container'); // Kontainer untuk Three.js canvas
     const quizContainer = document.getElementById('quiz-container');
     const finalPrizeContainer = document.getElementById('final-prize-container');
+    const giftAnimationContainer = document.getElementById('gift-animation-container'); // Ditambahkan untuk event listener animasi
     // submitQuizButton akan diinisialisasi ulang saat kuis dibuat
     // const pins = document.querySelectorAll('.map-pin'); // Pin HTML lama tidak digunakan lagi
 
@@ -36,12 +37,27 @@ document.addEventListener('DOMContentLoaded', () => {
     hideElement(finalPrizeContainer);
 
     // Fase 1: Animasi Kado dan Pesan Awal
-    giftImage.addEventListener('animationend', () => {
-        console.log("Animasi kado selesai");
-        dynamicMessage.textContent = "klik mana saja untuk melihat";
-        showElement(messageContainer);
-        currentStep = 1;
-    });
+    if (giftAnimationContainer) { // Pastikan elemen ada
+        giftAnimationContainer.addEventListener('animationend', () => {
+            console.log("Animasi kado (gift-animation-container) selesai.");
+            dynamicMessage.textContent = "klik mana saja untuk melihat";
+            showElement(messageContainer);
+            currentStep = 1;
+        });
+    } else {
+        console.error("#gift-animation-container tidak ditemukan. Tidak bisa melampirkan event animationend.");
+        // Fallback darurat jika animasi tidak terdeteksi, langsung ke step 1 setelah delay singkat
+        // Ini hanya untuk memastikan alur bisa lanjut jika ada masalah dengan deteksi animasi
+        setTimeout(() => {
+            if (currentStep === 0) { // Hanya jika belum ada interaksi
+                 console.warn("Fallback: Lanjut ke step 1 karena animasi mungkin tidak terdeteksi.");
+                 dynamicMessage.textContent = "klik mana saja untuk melihat";
+                 showElement(messageContainer);
+                 currentStep = 1;
+            }
+        }, 2500); // Sedikit lebih lama dari durasi animasi (2s)
+    }
+
 
     document.body.addEventListener('click', (event) => {
         // Pastikan klik tidak berasal dari elemen interaktif di dalam kontainer yang sudah aktif
