@@ -3,292 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sebuah Hadiah untuk Sena</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@700&family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        /* Menggunakan font Inter sebagai dasar dan Caveat untuk tulisan tangan */
-        body {
-            font-family: 'Inter', sans-serif;
-        }
-        .font-handwriting {
-            font-family: 'Caveat', cursive;
-        }
-        /* Animasi untuk kado jatuh */
-        @keyframes fall {
-            0% { transform: translateY(-200%); opacity: 0; }
-            100% { transform: translateY(0); opacity: 1; }
-        }
-        .animate-fall {
-            animation: fall 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
-        }
-        /* Animasi untuk kertas muncul */
-        @keyframes unfold {
-            0% { transform: scaleY(0); opacity: 0; }
-            100% { transform: scaleY(1); opacity: 1; }
-        }
-        .animate-unfold {
-            animation: unfold 1s ease-out forwards;
-        }
-        /* Animasi untuk pin di peta */
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            50% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
-        }
-        .pin-pulse {
-            animation: pulse 2s infinite;
-        }
-        /* Styling untuk pin yang sudah selesai */
-        .pin-solved {
-            background-color: #22c55e !important; /* green-500 */
-            animation: none !important;
-        }
-        /* Menyembunyikan elemen secara default */
-        .hidden {
-            display: none;
-        }
-    </style>
+    <title>Kado Ulang Tahun untuk Sena</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 </head>
-<body class="bg-gradient-to-br from-pink-200 to-sky-200 flex items-center justify-center min-h-screen p-4 overflow-hidden">
-
-    <!-- Kontainer Utama Game -->
-    <div id="game-container" class="w-full max-w-4xl mx-auto text-center">
-
-        <!-- 1. Layar Awal: Kado Jatuh -->
-        <div id="start-screen">
-            <div class="animate-fall">
-                <span class="text-8xl md:text-9xl">🎁</span>
-            </div>
-            <p id="start-text" class="mt-8 text-xl text-gray-700 opacity-0 transition-opacity duration-1000 delay-1000">Klik di mana saja untuk melihat</p>
-        </div>
-
-        <!-- 2. Layar Catatan: Hadiah Hilang -->
-        <div id="note-screen" class="hidden">
-            <div class="bg-[#fefce8] p-8 md:p-12 rounded-lg shadow-xl max-w-md mx-auto animate-unfold">
-                <h2 class="font-handwriting text-4xl text-gray-800 mb-4">Oh, tidak!</h2>
-                <p class="text-lg text-gray-600">Sepertinya kadonya jatuh dan hilang di suatu tempat... Tapi jangan khawatir, ada secarik peta petunjuk di dalamnya.</p>
-                <p class="text-lg text-gray-600 mt-4">Selesaikan semua teka-teki kenangan kita di setiap lokasi untuk menemukan hadiah utamanya!</p>
-            </div>
-            <p class="mt-8 text-xl text-gray-700">Klik di mana saja untuk melanjutkan</p>
-        </div>
-
-        <!-- 3. Layar Peta & Kuis -->
-        <div id="map-screen" class="hidden w-full">
-            <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4">Peta Kenangan Kita</h2>
-            <p class="text-gray-600 mb-6">Klik pin lokasi untuk memulai teka-teki.</p>
-            <div id="map-container" class="relative w-full max-w-3xl mx-auto aspect-video bg-blue-300 rounded-lg shadow-lg overflow-hidden">
-                <!-- SVG Peta Dunia Sederhana -->
-                <svg viewBox="0 0 1000 500" class="w-full h-full">
-                     <path d="M500,0 C223.86,0 0,223.86 0,500 H1000 C1000,223.86 776.14,0 500,0 Z" fill="#a1c4fd" />
-                    <path d="M499.99,16.22 C388.35,16.22 286.72,55.54 213.34,120.51 C138.8,186.53 100,284.28 100,388.88 L152.56,388.88 C152.56,298.37 185.39,219.01 247.9,165.74 C310.42,112.47 398.85,82.89 499.99,82.89 C601.14,82.89 689.57,112.47 752.09,165.74 C814.6,219.01 847.43,298.37 847.43,388.88 L900,388.88 C900,284.28 861.19,186.53 786.65,120.51 C713.27,55.54 611.64,16.22 499.99,16.22 Z" fill="#89b3f8" />
-                    <path d="M219.29,388.88 C219.29,425.83 241.92,456.91 275.69,471.55 C309.46,486.19 352.12,479.99 378.89,455.5 C405.66,431.01 411.33,392.23 394.02,362.2 C376.71,332.17 341.3,317.83 306.41,326.54 C271.52,335.25 242.4,359.87 219.29,388.88 Z" fill="#60a5fa" />
-                    <path d="M621.11,455.5 C647.88,479.99 690.54,486.19 724.31,471.55 C758.08,456.91 780.71,425.83 780.71,388.88 C757.6,359.87 728.48,335.25 693.59,326.54 C658.7,317.83 623.29,332.17 605.98,362.2 C588.67,392.23 594.34,431.01 621.11,455.5 Z" fill="#60a5fa" />
-                    <text x="500" y="250" font-family="Caveat" font-size="60" text-anchor="middle" fill="#fff">Dunia Kita</text>
-                </svg>
-                <!-- Pin Lokasi -->
-                <button id="pin-1" data-quiz="1" class="pin-pulse absolute w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-md cursor-pointer" style="top: 40%; left: 25%;"></button>
-                <button id="pin-2" data-quiz="2" class="pin-pulse absolute w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-md cursor-pointer" style="top: 65%; left: 40%;"></button>
-                <button id="pin-3" data-quiz="3" class="pin-pulse absolute w-6 h-6 bg-red-500 rounded-full border-2 border-white shadow-md cursor-pointer" style="top: 30%; left: 70%;"></button>
+<body>
+    <div id="main-container">
+        <div id="gift-animation-container">
+            <div id="gift-image-placeholder" class="gift-placeholder">
+                <div class="gift-lid"></div>
+                <div class="gift-box-main"></div>
+                <div class="gift-ribbon-v"></div>
+                <div class="gift-ribbon-h"></div>
             </div>
         </div>
 
-        <!-- 4. Modal Kuis -->
-        <div id="quiz-modal" class="hidden fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50">
-            <div id="quiz-box" class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md mx-auto text-left transform transition-transform duration-300 scale-95">
-                <h3 id="quiz-question" class="text-2xl font-bold text-gray-800 mb-4"></h3>
-                <p class="text-sm text-gray-500 mb-4">Ketik jawabanmu di bawah ini (huruf besar/kecil tidak masalah).</p>
-                <form id="quiz-form">
-                    <input id="quiz-answer" type="text" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-400 focus:outline-none" autocomplete="off">
-                    <div id="quiz-feedback" class="mt-4 text-sm font-bold"></div>
-                    <div class="mt-6 flex justify-end space-x-4">
-                         <button type="button" id="close-quiz-btn" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400">Tutup</button>
-                        <button type="submit" class="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600">Jawab</button>
-                    </div>
-                </form>
+        <div id="message-container">
+            <p id="dynamic-message"></p>
+        </div>
+
+        <div id="paper-message-container">
+            <div class="paper">
+                <p id="paper-text-content"></p>
             </div>
         </div>
 
-        <!-- 5. Layar Akhir: Hadiah Ditemukan -->
-        <div id="final-screen" class="hidden">
-            <div id="confetti-container" class="absolute inset-0 overflow-hidden pointer-events-none"></div>
-            <div class="bg-white/80 backdrop-blur-sm p-8 md:p-12 rounded-lg shadow-xl max-w-lg mx-auto">
-                <span class="text-7xl">🎉</span>
-                <h2 class="text-3xl md:text-4xl font-bold text-pink-500 mt-4">SELAMAT, SAYANG!</h2>
-                <p class="text-xl text-gray-700 mt-4">Kamu berhasil memecahkan semua teka-teki kenangan kita!</p>
-                <div class="mt-6 bg-green-100 border-l-4 border-green-500 text-green-800 p-4 rounded-lg">
-                    <p class="font-bold text-lg">Hadiahmu telah ditemukan:</p>
-                    <p class="text-md mt-2">Sebuah "kode rahasia" Gopay senilai:</p>
-                    <p class="text-5xl font-bold my-3">Rp 143</p>
-                    <p class="text-md">Kenapa 143? Karena itu adalah kode untuk...</p>
-                    <p class="text-3xl font-bold mt-2">I (1) ❤️ LOVE (4) ❤️ YOU (3)</p>
-                </div>
-                <p class="mt-8 text-2xl font-handwriting text-gray-800">Selamat Ulang Tahun, Sena!</p>
+        <div id="map-container">
+            <!-- Canvas Three.js akan dimasukkan di sini oleh script.js -->
+            <!-- Pin HTML statis ini mungkin tidak akan digunakan lagi dengan Three.js,
+                 karena pin akan menjadi objek 3D di dalam canvas.
+                 Saya akan membiarkannya untuk saat ini tetapi kemungkinan akan dihapus/diganti. -->
+            <div class="map-pin" id="pin1" style="top: 30%; left: 40%; display: none;">Pin 1</div>
+            <div class="map-pin" id="pin2" style="top: 50%; left: 60%; display: none;">Pin 2</div>
+        </div>
+
+        <div id="quiz-container">
+            <h2>Teka-Teki Kenangan</h2>
+            <div id="quiz-content">
+                <!-- Konten kuis akan dimuat di sini oleh JavaScript -->
+                <p>Ini adalah placeholder untuk kuis. Jawablah dengan benar!</p>
+                <button id="submit-quiz-button">Selesaikan Kuis</button>
             </div>
         </div>
 
+        <div id="final-prize-container">
+            <h2>Selamat!</h2>
+            <p>Kamu berhasil memecahkan semua teka-teki!</p>
+            <p>Hadiahmu adalah saldo Gopay sebesar:</p>
+            <p id="gopay-amount">Rp XXX.XXX</p>
+            <p>Dan sebuah pesan rahasia: <span id="secret-message"></span></p>
+        </div>
     </div>
 
-    <script>
-        // --- PENGATURAN GAME ---
-        // Kamu bisa mengubah pertanyaan dan jawaban di sini.
-        // Pastikan jawaban hanya satu kata/frasa singkat agar mudah.
-        const quizzes = [
-            {
-                id: 1,
-                question: "Di kota mana kita pertama kali nonton bioskop bareng?",
-                answer: "jakarta" // ganti dengan jawabanmu
-            },
-            {
-                id: 2,
-                question: "Apa nama panggilan sayang pertamaku untukmu?",
-                answer: "gembul" // ganti dengan jawabanmu
-            },
-            {
-                id: 3,
-                question: "Apa judul film pertama yang kita tonton bersama?",
-                answer: "avengers" // ganti dengan jawabanmu
-            }
-        ];
-        
-        // --- LOGIKA GAME ---
-        document.addEventListener('DOMContentLoaded', () => {
-            // Variabel untuk menyimpan state game
-            let currentStage = 'start';
-            let solvedQuizzes = new Set();
-            let currentQuizId = null;
-
-            // Elemen-elemen DOM
-            const startScreen = document.getElementById('start-screen');
-            const startText = document.getElementById('start-text');
-            const noteScreen = document.getElementById('note-screen');
-            const mapScreen = document.getElementById('map-screen');
-            const finalScreen = document.getElementById('final-screen');
-            const quizModal = document.getElementById('quiz-modal');
-            const quizBox = document.getElementById('quiz-box');
-            
-            // Tampilkan teks awal setelah animasi kado selesai
-            setTimeout(() => {
-                startText.style.opacity = '1';
-            }, 1500);
-
-            // Fungsi untuk pindah state game
-            function advanceGame(e) {
-                // Mencegah klik pada elemen interaktif (pin, form) untuk memajukan game
-                if (e.target.closest('button, input, form')) return;
-                
-                if (currentStage === 'start') {
-                    currentStage = 'note';
-                    startScreen.classList.add('hidden');
-                    noteScreen.classList.remove('hidden');
-                } else if (currentStage === 'note') {
-                    currentStage = 'map';
-                    noteScreen.classList.add('hidden');
-                    mapScreen.classList.remove('hidden');
-                    // Hapus event listener ini agar tidak mengganggu klik di peta
-                    document.body.removeEventListener('click', advanceGame);
-                }
-            }
-            
-            // Event listener awal untuk klik di mana saja
-            document.body.addEventListener('click', advanceGame);
-
-            // Logika untuk menampilkan kuis saat pin diklik
-            document.querySelectorAll('[data-quiz]').forEach(pin => {
-                pin.addEventListener('click', () => {
-                    const quizId = parseInt(pin.dataset.quiz);
-                    if (solvedQuizzes.has(quizId)) return; // Jangan buka kuis yang sudah selesai
-                    
-                    currentQuizId = quizId;
-                    const quizData = quizzes.find(q => q.id === quizId);
-                    
-                    document.getElementById('quiz-question').textContent = quizData.question;
-                    document.getElementById('quiz-answer').value = '';
-                    document.getElementById('quiz-feedback').textContent = '';
-                    document.getElementById('quiz-feedback').className = 'mt-4 text-sm font-bold';
-                    
-                    quizModal.classList.remove('hidden');
-                    setTimeout(() => quizBox.style.transform = 'scale(1)', 10);
-                });
-            });
-
-            // Logika untuk menutup modal kuis
-            document.getElementById('close-quiz-btn').addEventListener('click', () => {
-                 quizBox.style.transform = 'scale(0.95)';
-                 setTimeout(() => quizModal.classList.add('hidden'), 300);
-            });
-
-            // Logika untuk memeriksa jawaban kuis
-            document.getElementById('quiz-form').addEventListener('submit', (e) => {
-                e.preventDefault();
-                const userAnswer = document.getElementById('quiz-answer').value.trim().toLowerCase();
-                const quizData = quizzes.find(q => q.id === currentQuizId);
-                const feedbackEl = document.getElementById('quiz-feedback');
-
-                if (userAnswer === quizData.answer.toLowerCase()) {
-                    feedbackEl.textContent = 'Jawabanmu Benar! Pin berubah menjadi hijau.';
-                    feedbackEl.className = 'mt-4 text-sm font-bold text-green-600';
-                    solvedQuizzes.add(currentQuizId);
-                    
-                    // Tandai pin sebagai selesai
-                    document.getElementById(`pin-${currentQuizId}`).classList.remove('pin-pulse');
-                    document.getElementById(`pin-${currentQuizId}`).classList.add('pin-solved');
-
-                    setTimeout(() => {
-                        quizBox.style.transform = 'scale(0.95)';
-                        setTimeout(() => quizModal.classList.add('hidden'), 300);
-                        
-                        // Cek jika semua kuis sudah selesai
-                        if (solvedQuizzes.size === quizzes.length) {
-                            showFinalScreen();
-                        }
-                    }, 1500);
-
-                } else {
-                    feedbackEl.textContent = 'Hmm, sepertinya salah. Coba ingat-ingat lagi, sayang!';
-                    feedbackEl.className = 'mt-4 text-sm font-bold text-red-600';
-                }
-            });
-            
-            // Fungsi untuk menampilkan layar akhir
-            function showFinalScreen() {
-                setTimeout(() => {
-                    mapScreen.classList.add('hidden');
-                    finalScreen.classList.remove('hidden');
-                    launchConfetti();
-                }, 500);
-            }
-
-            // Fungsi untuk membuat confetti
-            function launchConfetti() {
-                const container = document.getElementById('confetti-container');
-                const colors = ['#f472b6', '#ec4899', '#38bdf8', '#60a5fa', '#fde047'];
-                for (let i = 0; i < 100; i++) {
-                    const confetti = document.createElement('div');
-                    confetti.style.position = 'absolute';
-                    confetti.style.width = `${Math.random() * 10 + 5}px`;
-                    confetti.style.height = confetti.style.width;
-                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                    confetti.style.top = `${Math.random() * -20}vh`;
-                    confetti.style.left = `${Math.random() * 100}vw`;
-                    confetti.style.opacity = '0.7';
-                    confetti.style.transform = `rotate(${Math.random() * 360}deg)`;
-                    container.appendChild(confetti);
-
-                    const animation = confetti.animate([
-                        { transform: `translateY(0) rotate(${Math.random() * 360}deg)`, opacity: 1 },
-                        { transform: `translateY(120vh) rotate(${Math.random() * 360}deg)`, opacity: 0 }
-                    ], {
-                        duration: Math.random() * 3000 + 4000,
-                        easing: 'ease-out',
-                        delay: Math.random() * 1000,
-                    });
-                    
-                    animation.onfinish = () => confetti.remove();
-                }
-            }
-        });
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
