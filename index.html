@@ -3,59 +3,872 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kado Ulang Tahun untuk Sena</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Sebuah Petualangan untuk Sena</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=Satisfy&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.9.1/gsap.min.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Poppins', 'sans-serif'],
+                        'handwriting': ['Satisfy', 'cursive'],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Poppins', 'sans-serif';
+            overflow: hidden;
+            background-color: #f1f5f9; /* slate-100 */
+        }
+        .scene {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s ease-in-out;
+            color: #1e293b; /* slate-800 */
+        }
+        .active {
+            display: flex;
+        }
+        .hidden-completely {
+            display: none !important;
+        }
+        .puzzle-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 100px);
+            grid-template-rows: repeat(3, 100px);
+            gap: 5px;
+            border: 2px solid #cbd5e1; /* slate-300 */
+            padding: 5px;
+            background-color: #fff;
+            transition: border-color 0.5s;
+        }
+        .puzzle-piece {
+            width: 100px;
+            height: 100px;
+            background-size: 300px 300px;
+            cursor: pointer;
+            border: 1px solid #e2e8f0; /* slate-200 */
+            transition: transform 0.2s;
+        }
+        .puzzle-piece:hover {
+            transform: scale(1.05);
+            z-index: 10;
+        }
+        #gift-box-canvas {
+            cursor: pointer;
+        }
+        /* --- Gaya Kertas Surat Realistis --- */
+        .paper-look {
+            background-color: #fefce8; /* yellow-50 */
+            background-image: url('https://www.transparenttextures.com/patterns/worn-dots.png');
+            color: #44403c; /* stone-700 */
+            border: 1px solid #dcdcdc;
+            box-shadow: 2px 4px 12px rgba(0,0,0,0.2);
+            transform: rotate(-2deg);
+            transition: transform 0.3s ease;
+            text-align: center;
+        }
+        .paper-look:hover {
+            transform: rotate(-1deg) scale(1.02);
+        }
+        .paper-look h2 {
+            font-size: 2.8rem;
+            color: #854d0e; /* yellow-800 */
+            margin-bottom: 1rem;
+        }
+        .paper-look p {
+            font-size: 1.5rem;
+            line-height: 1.7;
+            margin-bottom: 1.5rem;
+        }
+        .paper-look button {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+        }
+        /* --- Globe Scene --- */
+        #scene3 {
+            background: #dbeafe; /* blue-100 */
+        }
+        #globe-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+        }
+        #globe-container:grabbing {
+            cursor: grabbing;
+        }
+        .pin {
+            position: absolute;
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            transition: transform 0.2s, opacity 0.2s;
+        }
+        .pin-icon {
+            width: 40px;
+            height: 40px;
+            filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.4));
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+        .pin-tooltip {
+            position: absolute;
+            bottom: 110%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: max-content;
+            max-width: 200px;
+            padding: 8px 12px;
+            background-color: rgba(20, 20, 20, 0.85);
+            color: white;
+            border-radius: 8px;
+            font-size: 14px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        .pin:hover .pin-tooltip {
+            opacity: 1;
+        }
+        /* --- Memory Game Styles --- */
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 80px);
+            grid-gap: 10px;
+            perspective: 1000px;
+        }
+        .memory-card {
+            width: 80px;
+            height: 100px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s;
+            cursor: pointer;
+        }
+        .memory-card.flipped {
+            transform: rotateY(180deg);
+        }
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        .card-front {
+            background-color: #f472b6; /* pink-400 */
+        }
+        .card-back {
+            background-color: #fef3c7; /* amber-100 */
+            transform: rotateY(180deg);
+            font-size: 40px;
+        }
+        .memory-card.matched {
+            transform: rotateY(180deg) scale(1.05);
+            opacity: 0.7;
+            pointer-events: none;
+        }
+    </style>
 </head>
-<body>
-    <div id="main-container">
-        <div id="gift-animation-container">
-            <div id="gift-image-placeholder" class="gift-placeholder">
-                <div class="gift-lid"></div>
-                <div class="gift-box-main"></div>
-                <div class="gift-ribbon-v"></div>
-                <div class="gift-ribbon-h"></div>
-            </div>
-        </div>
+<body class="bg-slate-100">
 
-        <div id="message-container">
-            <p id="dynamic-message"></p>
-        </div>
-
-        <div id="paper-message-container">
-            <div class="paper">
-                <p id="paper-text-content"></p>
-            </div>
-        </div>
-
-        <div id="map-container">
-            <!-- Canvas Three.js akan dimasukkan di sini oleh script.js -->
-            <!-- Pin HTML statis ini mungkin tidak akan digunakan lagi dengan Three.js,
-                 karena pin akan menjadi objek 3D di dalam canvas.
-                 Saya akan membiarkannya untuk saat ini tetapi kemungkinan akan dihapus/diganti. -->
-            <div class="map-pin" id="pin1" style="top: 30%; left: 40%; display: none;">Pin 1</div>
-            <div class="map-pin" id="pin2" style="top: 50%; left: 60%; display: none;">Pin 2</div>
-        </div>
-
-        <div id="quiz-container">
-            <h2>Teka-Teki Kenangan</h2>
-            <div id="quiz-content">
-                <!-- Konten kuis akan dimuat di sini oleh JavaScript -->
-                <p>Ini adalah placeholder untuk kuis. Jawablah dengan benar!</p>
-                <button id="submit-quiz-button">Selesaikan Kuis</button>
-            </div>
-        </div>
-
-        <div id="final-prize-container">
-            <h2>Selamat!</h2>
-            <p>Kamu berhasil memecahkan semua teka-teki!</p>
-            <p>Hadiahmu adalah saldo Gopay sebesar:</p>
-            <p id="gopay-amount">Rp XXX.XXX</p>
-            <p>Dan sebuah pesan rahasia: <span id="secret-message"></span></p>
+    <!-- Scene 1: Animasi Pembuka -->
+    <div id="scene1" class="scene active">
+        <div id="gift-box-container" class="text-center">
+            <canvas id="gift-box-canvas"></canvas>
+            <p id="click-to-open-text" class="mt-4 text-xl text-slate-700 font-semibold animate-pulse">Klik untuk membuka kado...</p>
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <!-- Scene 2: Surat Misteri -->
+    <div id="scene2" class="scene hidden-completely bg-transparent p-8">
+        <div id="letter" class="paper-look max-w-lg w-full p-10 rounded-lg">
+            <h2 class="font-handwriting">Halo Sena,</h2>
+            <p class="font-handwriting">Hadiahmu hilang! Tapi jangan khawatir, aku tidak menghilangkannya. Aku menyembunyikannya di tempat-tempat yang punya kenangan spesial bagi kita. Temukan hadiahnya dengan menyelesaikan semua teka-teki yang kusiapkan...</p>
+            <button onclick="goToScene('scene3')" class="bg-pink-500 text-white px-6 py-2 rounded-full hover:bg-pink-600 transition">Mulai Petualangan!</button>
+        </div>
+    </div>
+
+    <!-- Scene 3: Peta Kenangan Dunia 3D -->
+    <div id="scene3" class="scene hidden-completely">
+        <div class="absolute top-5 left-1/2 -translate-x-1/2 text-center z-10">
+            <h1 class="text-4xl font-bold text-slate-800 drop-shadow-lg">Peta Kenangan Dunia</h1>
+            <p class="text-slate-600">Klik dan geser untuk memutar bola dunia. Temukan semua pin!</p>
+        </div>
+        <div id="globe-container">
+            <canvas id="globe-canvas"></canvas>
+            <div id="pins-container"></div>
+        </div>
+    </div>
+    
+    <!-- Puzzle Modals Container -->
+    <div id="puzzle-modal-container" class="hidden-completely absolute inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
+        <!-- Puzzle 1: Trivia -->
+        <div id="puzzle1" class="puzzle-content hidden-completely bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
+            <h2 class="text-2xl font-bold mb-4">Teka-Teki #1: Our First Kiss</h2>
+            <p class="mb-6 text-slate-600">Di mana ciuman pertama kita terjadi?</p>
+            <div id="trivia-options" class="space-y-3">
+                <button data-correct="true" class="w-full text-left p-3 bg-slate-100 rounded-lg hover:bg-slate-200">Perpus UI</button>
+                <button data-correct="false" class="w-full text-left p-3 bg-slate-100 rounded-lg hover:bg-slate-200">Kondangan</button>
+                <button data-correct="false" class="w-full text-left p-3 bg-slate-100 rounded-lg hover:bg-slate-200">Stasiun Bogor</button>
+            </div>
+        </div>
+        <!-- Puzzle 2: Jigsaw -->
+        <div id="puzzle2" class="puzzle-content hidden-completely bg-white p-8 rounded-lg shadow-xl w-auto text-center">
+            <h2 class="text-2xl font-bold mb-4">Teka-Teki #2: Kenangan di Pantai</h2>
+            <p class="mb-6 text-slate-600">Susun kembali potongan gambar ini. Klik dua potongan untuk menukarnya.</p>
+            <div id="jigsaw-puzzle" class="puzzle-grid mx-auto"></div>
+            <button onclick="checkJigsawWin()" class="mt-6 w-full bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600">Cek Puzzle</button>
+        </div>
+        <!-- Puzzle 3: Memory Game -->
+        <div id="puzzle3" class="puzzle-content hidden-completely bg-white p-8 rounded-lg shadow-xl w-auto text-center">
+             <h2 class="text-2xl font-bold mb-4">Teka-Teki #3: Pasangan Kenangan</h2>
+            <p class="mb-6 text-slate-600">Temukan semua pasangan kartu yang sama!</p>
+            <div id="memory-game-grid" class="memory-grid mx-auto"></div>
+        </div>
+        <!-- Puzzle 4: Memory Journal -->
+        <div id="puzzle4" class="puzzle-content hidden-completely bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
+            <h2 class="text-2xl font-bold mb-4">Teka-Teki #4: Naik Motor Terjauh</h2>
+            <p class="mb-6 text-slate-600">Kemana naik motor kita paling jauh?</p>
+            <input id="journal-answer" type="text" class="w-full p-3 border-slate-300 rounded-lg" placeholder="Ketik jawabanmu di sini...">
+            <button onclick="checkJournalAnswer()" class="mt-4 w-full bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600">Cek Jawaban</button>
+        </div>
+        <!-- Puzzle 5: Secret Code -->
+        <div id="puzzle5" class="puzzle-content hidden-completely bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
+            <h2 class="text-2xl font-bold mb-4">Teka-Teki #5: Pesan Rahasia</h2>
+            <p class="mb-4 text-slate-600">Pecahkan sandi ini untuk mendapatkan karakter terakhir!</p>
+            <p class="mb-4 text-lg font-mono bg-slate-100 p-4 rounded">Sandi: J MPWF ZPV</p>
+            <p class="mb-4 text-slate-500 text-sm">Petunjuk: Setiap huruf digeser satu langkah ke belakang (A -> Z, B -> A).</p>
+            <input id="secret-code-answer" type="text" class="w-full p-3 border-slate-300 rounded-lg" placeholder="Ketik pesan yang terpecahkan...">
+            <button onclick="checkSecretCode()" class="mt-4 w-full bg-pink-500 text-white px-6 py-2 rounded-lg hover:bg-pink-600">Pecahkan Sandi</button>
+        </div>
+    </div>
+
+    <!-- Scene 5: Finale -->
+    <div id="scene5" class="scene hidden-completely bg-slate-800 text-white p-8">
+        <img src="https://placehold.co/200x200/facc15/000000?text=Peti+Harta" alt="Peti Harta Karun" class="mb-8 w-48 h-48">
+        <h2 class="text-3xl font-bold mb-4">Hadiah Terakhir Terkunci!</h2>
+        <p class="mb-6">Masukkan 5 karakter kode yang telah kamu kumpulkan.</p>
+        <div id="code-inputs" class="flex gap-3 mb-6">
+            <input type="text" maxlength="1" class="code-input w-12 h-14 text-center text-3xl rounded-lg bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <input type="text" maxlength="1" class="code-input w-12 h-14 text-center text-3xl rounded-lg bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <input type="text" maxlength="1" class="code-input w-12 h-14 text-center text-3xl rounded-lg bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <input type="text" maxlength="1" class="code-input w-12 h-14 text-center text-3xl rounded-lg bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-400">
+            <input type="text" maxlength="1" class="code-input w-12 h-14 text-center text-3xl rounded-lg bg-slate-700 border border-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-400">
+        </div>
+        <button onclick="checkFinalCode()" class="bg-amber-400 text-slate-900 font-bold px-8 py-3 rounded-lg hover:bg-amber-500 transition">Buka Peti!</button>
+    </div>
+
+    <!-- Scene 6: Reveal Hadiah -->
+    <div id="scene6" class="scene hidden-completely bg-gradient-to-br from-rose-400 via-fuchsia-500 to-indigo-500 text-white p-8">
+        <div id="gift-reveal-content" class="text-center transform scale-0">
+            <h1 class="text-4xl font-bold mb-4">Selamat! Kamu Berhasil!</h1>
+            <div id="gopay-voucher" class="bg-white text-slate-800 p-6 rounded-lg shadow-lg max-w-sm mx-auto cursor-pointer">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/8/86/Gopay_logo.svg" alt="GoPay Logo" class="h-12 mx-auto mb-4">
+                <p class="text-lg">Voucher Hadiah untukmu:</p>
+                <p id="voucher-amount" class="text-5xl font-bold text-blue-600 my-4">Rp 143.000</p>
+                <p class="text-xs text-slate-500">Klik nominal 3x untuk kejutan!</p>
+            </div>
+            <div id="easter-egg" class="hidden-completely mt-6">
+                 <p class="font-mono bg-black bg-opacity-20 p-3 rounded-lg break-all">01101001 00100000 01101100 01101111 01110110 01100101 00100000 01110101</p>
+                 <button onclick="decodeBinary()" class="mt-2 text-sm bg-white text-black px-3 py-1 rounded-full">Decode</button>
+            </div>
+            <p id="final-message" class="mt-8 text-xl font-handwriting max-w-lg"></p>
+        </div>
+    </div>
+    
+    <!-- Feedback Modals -->
+    <div id="feedback-modal-container" class="hidden-completely fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center p-4 z-50">
+        <div id="feedback-success" class="hidden-completely bg-white p-8 rounded-lg shadow-xl text-center w-11/12 max-w-sm transform scale-0">
+            <svg class="w-16 h-16 text-green-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <h3 class="text-2xl font-bold mb-2">Berhasil!</h3>
+            <p id="success-message" class="text-lg mb-6"></p>
+            <button id="success-ok" class="w-full bg-green-500 text-white px-8 py-2 rounded-lg hover:bg-green-600">Lanjut!</button>
+        </div>
+        <div id="feedback-fail" class="hidden-completely bg-white p-8 rounded-lg shadow-xl text-center w-11/12 max-w-sm transform scale-0">
+            <svg class="w-16 h-16 text-red-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <h3 class="text-2xl font-bold mb-2">Oops!</h3>
+            <p id="fail-message" class="text-lg mb-6"></p>
+            <button id="fail-ok" class="w-full bg-red-500 text-white px-8 py-2 rounded-lg hover:bg-red-600">Coba Lagi</button>
+        </div>
+    </div>
+
+    <!-- Confetti Container -->
+    <div id="confetti-container" class="absolute inset-0 pointer-events-none z-50"></div>
+
+
+    <script>
+        // --- Game State and Config ---
+        const gameState = {
+            currentScene: 'scene1',
+            puzzles: [
+                { id: 1, name: "Our First Kiss", lat: 20, lon: -100, solved: false, code: 'j' },
+                { id: 2, name: "Kenangan di Pantai", lat: -30, lon: 45, solved: false, code: 'o' },
+                { id: 3, name: "Pasangan Kenangan", lat: 45, lon: 120, solved: false, code: 's' },
+                { id: 4, name: "Naik Motor Terjauh", lat: -10, lon: -30, solved: false, code: 'e' },
+                { id: 5, "name": "Pesan Rahasia", lat: -40, lon: -150, solved: false, code: 'v' }
+            ],
+            finalCode: "josev",
+            globeInitialized: false
+        };
+        
+        // --- Scene 1: 3D Gift Box ---
+        let giftBoxScene, giftBoxCamera, giftBoxRenderer, giftBox;
+
+        function initGiftBox() {
+            giftBoxScene = new THREE.Scene();
+            giftBoxCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            giftBoxCamera.position.z = 5;
+            giftBoxRenderer = new THREE.WebGLRenderer({ canvas: document.getElementById('gift-box-canvas'), antialias: true, alpha: true });
+            giftBoxRenderer.setSize(400, 400);
+            const boxGeometry = new THREE.BoxGeometry(3.5, 2, 2);
+            const boxMaterial = new THREE.MeshStandardMaterial({ color: 0xe11d48 }); // Rose-600
+            giftBox = new THREE.Mesh(boxGeometry, boxMaterial);
+            const lidGeometry = new THREE.BoxGeometry(3.7, 0.4, 2.2);
+            const lidMaterial = new THREE.MeshStandardMaterial({ color: 0xfbbf24 }); // Amber-400
+            const lid = new THREE.Mesh(lidGeometry, lidMaterial);
+            lid.position.y = 1.2;
+            giftBox.add(lid);
+            const ribbonMaterial = new THREE.MeshStandardMaterial({ color: 0xfbbf24 }); // Amber-400
+            const ribbonX = new THREE.Mesh(new THREE.BoxGeometry(3.75, 0.1, 0.5), ribbonMaterial);
+            const ribbonZ = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.1, 2.25), ribbonMaterial);
+            lid.add(ribbonX);
+            lid.add(ribbonZ);
+            giftBoxScene.add(giftBox);
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            giftBoxScene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 7.5);
+            giftBoxScene.add(directionalLight);
+            giftBox.position.y = 8;
+            gsap.to(giftBox.position, { y: 0, duration: 2, ease: "bounce.out" });
+            gsap.to(giftBox.rotation, { y: Math.PI * 2, duration: 2.5, ease: "power1.inOut" });
+            animateGiftBox();
+        }
+
+        function animateGiftBox() {
+            requestAnimationFrame(animateGiftBox);
+            giftBoxRenderer.render(giftBoxScene, giftBoxCamera);
+        }
+
+        function openGiftBox() {
+            document.getElementById('gift-box-canvas').style.pointerEvents = 'none';
+            const lid = giftBox.children[0];
+            gsap.to(lid.position, { y: 3, z: -2, duration: 1, ease: "power2.out" });
+            gsap.to(lid.rotation, { x: -Math.PI / 4, duration: 1, ease: "power2.out" });
+            document.getElementById('click-to-open-text').style.display = 'none';
+            setTimeout(() => { goToScene('scene2'); }, 1200); 
+        }
+
+        document.getElementById('gift-box-canvas').addEventListener('click', openGiftBox);
+        
+        // --- Scene 3: 3D Globe (Optimized) ---
+        let globeScene, globeCamera, globeRenderer, globe, pins = [];
+        let isMouseDown = false, mouseX = 0, mouseY = 0;
+
+        function initGlobe() {
+            if (gameState.globeInitialized) return;
+
+            const container = document.getElementById('globe-container');
+            const canvas = document.getElementById('globe-canvas');
+            
+            globeScene = new THREE.Scene();
+            globeCamera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+            globeCamera.position.z = 15;
+            
+            globeRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: true });
+            globeRenderer.setSize(container.clientWidth, container.clientHeight);
+            globeRenderer.setPixelRatio(window.devicePixelRatio);
+
+            globeScene.add(new THREE.AmbientLight(0xffffff, 0.8));
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            dirLight.position.set(5, 5, 5);
+            globeScene.add(dirLight);
+
+            const globeRadius = 5;
+            const landColor = '#a7f3d0'; // emerald-200
+            const oceanColor = '#a5f3fc'; // cyan-200
+            const displacementScale = 0.1;
+
+            const textureCanvas = document.createElement('canvas');
+            textureCanvas.width = 1024;
+            textureCanvas.height = 512;
+            const context = textureCanvas.getContext('2d');
+
+            context.fillStyle = oceanColor;
+            context.fillRect(0, 0, textureCanvas.width, textureCanvas.height);
+
+            context.fillStyle = landColor;
+            for (let i = 0; i < 30; i++) {
+                const x = Math.random() * textureCanvas.width;
+                const y = Math.random() * textureCanvas.height;
+                const size = Math.random() * 100 + 40;
+                context.beginPath();
+                context.arc(x, y, size, 0, Math.PI * 2);
+                context.fill();
+            }
+            const colorMap = new THREE.CanvasTexture(textureCanvas);
+            
+            const displacementMap = new THREE.CanvasTexture(textureCanvas);
+
+            const globeGeometry = new THREE.SphereGeometry(globeRadius, 32, 32);
+            const globeMaterial = new THREE.MeshPhongMaterial({
+                map: colorMap,
+                displacementMap: displacementMap,
+                displacementScale: displacementScale,
+                shininess: 5
+            });
+            globe = new THREE.Mesh(globeGeometry, globeMaterial);
+            globeScene.add(globe);
+
+            createPins();
+
+            container.addEventListener('mousedown', onMouseDown);
+            container.addEventListener('mousemove', onMouseMove);
+            container.addEventListener('mouseup', onMouseUp);
+            container.addEventListener('mouseleave', onMouseUp);
+            window.addEventListener('resize', onWindowResize);
+
+            animateGlobe();
+            gameState.globeInitialized = true;
+        }
+
+        function createPins() {
+            const pinsContainer = document.getElementById('pins-container');
+            pinsContainer.innerHTML = '';
+            pins = [];
+            gameState.puzzles.forEach(puzzleData => {
+                const isSolved = puzzleData.solved;
+                
+                const pinEl = document.createElement('div');
+                pinEl.className = 'pin';
+                pinEl.innerHTML = `
+                    <svg class="pin-icon" style="color: ${isSolved ? '#facc15' : '#f43f5e'}" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 20l-4.95-6.05a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd" />
+                    </svg>
+                    <div class="pin-tooltip">
+                        Teka-Teki #${puzzleData.id}: ${puzzleData.name}
+                        ${isSolved ? '<br><span class="text-green-400">(Selesai)</span>' : ''}
+                    </div>
+                `;
+                
+                pinEl.onclick = () => showPuzzle(puzzleData.id);
+                pinsContainer.appendChild(pinEl);
+
+                pins.push({
+                    lat: puzzleData.lat,
+                    lon: puzzleData.lon,
+                    element: pinEl
+                });
+            });
+        }
+
+        function latLonToVector3(lat, lon, radius) {
+            const phi = (90 - lat) * (Math.PI / 180);
+            const theta = (lon + 180) * (Math.PI / 180);
+            const x = -(radius * Math.sin(phi) * Math.cos(theta));
+            const z = radius * Math.sin(phi) * Math.sin(theta);
+            const y = radius * Math.cos(phi);
+            return new THREE.Vector3(x, y, z);
+        }
+
+        function updatePinPositions() {
+            if (!globeCamera || !globe) return;
+            const cameraDirection = new THREE.Vector3();
+            globeCamera.getWorldDirection(cameraDirection);
+
+            pins.forEach(pin => {
+                const pinPos3D = latLonToVector3(pin.lat, pin.lon, 5.1);
+                pinPos3D.applyQuaternion(globe.quaternion);
+
+                const pinNormal = pinPos3D.clone().normalize();
+                const dot = pinNormal.dot(cameraDirection);
+
+                if (dot < -0.2) {
+                    pin.element.style.opacity = '1';
+                    pin.element.style.pointerEvents = 'auto';
+                    
+                    const projectedPos = pinPos3D.clone().project(globeCamera);
+                    const x = (projectedPos.x * .5 + .5) * globeRenderer.domElement.clientWidth;
+                    const y = (projectedPos.y * -.5 + .5) * globeRenderer.domElement.clientHeight;
+
+                    pin.element.style.left = `${x}px`;
+                    pin.element.style.top = `${y}px`;
+                    pin.element.style.transform = `translate(-50%, -50%) scale(${1 + projectedPos.z * 0.5})`;
+                } else {
+                    pin.element.style.opacity = '0';
+                    pin.element.style.pointerEvents = 'none';
+                }
+            });
+        }
+        
+        function onMouseDown(event) { isMouseDown = true; mouseX = event.clientX; mouseY = event.clientY; document.getElementById('globe-container').style.cursor = 'grabbing'; }
+        function onMouseMove(event) {
+            if (isMouseDown && globe) {
+                const deltaX = event.clientX - mouseX;
+                const deltaY = event.clientY - mouseY;
+                globe.rotation.y += deltaX * 0.005;
+                globe.rotation.x += deltaY * 0.005;
+                mouseX = event.clientX;
+                mouseY = event.clientY;
+            }
+        }
+        function onMouseUp() { isMouseDown = false; document.getElementById('globe-container').style.cursor = 'grab'; }
+        function onWindowResize() {
+            if (!globeCamera || !globeRenderer) return;
+            const container = document.getElementById('globe-container');
+            globeCamera.aspect = container.clientWidth / container.clientHeight;
+            globeCamera.updateProjectionMatrix();
+            globeRenderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function animateGlobe() {
+            requestAnimationFrame(animateGlobe);
+            if (globe && !isMouseDown) {
+                globe.rotation.y += 0.0005;
+            }
+            updatePinPositions();
+            if(globeRenderer) globeRenderer.render(globeScene, globeCamera);
+        }
+
+        // --- Scene Management ---
+        function goToScene(nextSceneId) {
+            const currentSceneEl = document.getElementById(gameState.currentScene);
+            const nextSceneEl = document.getElementById(nextSceneId);
+            if (!currentSceneEl || !nextSceneEl) return;
+
+            nextSceneEl.classList.remove('hidden-completely');
+            nextSceneEl.classList.add('active');
+            nextSceneEl.style.opacity = 0;
+
+            const timeline = gsap.timeline({
+                onComplete: () => {
+                    currentSceneEl.classList.remove('active');
+                    currentSceneEl.classList.add('hidden-completely');
+                    currentSceneEl.style.opacity = 1; 
+                    gameState.currentScene = nextSceneId;
+                }
+            });
+
+            timeline.to(currentSceneEl, { opacity: 0, duration: 0.5, ease: 'power1.in' });
+            
+            if (nextSceneId === 'scene2') {
+                const letter = document.getElementById('letter');
+                timeline.to(nextSceneEl, { opacity: 1, duration: 0.5 }, "-=0.2")
+                        .fromTo(letter, { scale: 0, y: 150, opacity: 0 }, { scale: 1, y: 0, opacity: 1, duration: 0.8, ease: 'back.out(1.7)' }, "-=0.5");
+            } else {
+                timeline.to(nextSceneEl, { opacity: 1, duration: 0.5 });
+            }
+
+            if (nextSceneId === 'scene3') {
+                initGlobe();
+            } else if (nextSceneId === 'scene6') {
+                gsap.fromTo("#gift-reveal-content", { scale: 0 }, { scale: 1, duration: 0.5, ease: "back.out(1.7)", delay: 0.5, onComplete: createConfetti });
+                document.getElementById('final-message').textContent = "Hadiahnya bukan cuma GoPay... tapi semua momen yang kita lewati. Happy Birthday, Sena! - [Nama Kamu]";
+            }
+        }
+        
+        // --- Feedback Modal Logic (REVISED) ---
+        function showFeedback(isSuccess, message, onOk) {
+            const container = document.getElementById('feedback-modal-container');
+            const successModal = document.getElementById('feedback-success');
+            const failModal = document.getElementById('feedback-fail');
+            
+            container.classList.remove('hidden-completely');
+
+            if (isSuccess) {
+                failModal.classList.add('hidden-completely');
+                successModal.classList.remove('hidden-completely');
+                document.getElementById('success-message').textContent = message;
+                document.getElementById('success-ok').onclick = () => {
+                    gsap.to(successModal, { scale: 0, duration: 0.3, ease: 'back.in', onComplete: () => {
+                        container.classList.add('hidden-completely');
+                        if (onOk) onOk();
+                    }});
+                };
+                gsap.fromTo(successModal, { scale: 0 }, { scale: 1, duration: 0.4, ease: 'back.out(1.7)' });
+            } else {
+                successModal.classList.add('hidden-completely');
+                failModal.classList.remove('hidden-completely');
+                document.getElementById('fail-message').textContent = message;
+                document.getElementById('fail-ok').onclick = () => {
+                    gsap.to(failModal, { scale: 0, duration: 0.3, ease: 'back.in', onComplete: () => {
+                        container.classList.add('hidden-completely');
+                        if (onOk) onOk();
+                    }});
+                };
+                gsap.fromTo(failModal, { scale: 0 }, { scale: 1, duration: 0.4, ease: 'back.out(1.7)' });
+            }
+        }
+
+        // --- Puzzle Logic ---
+        function showPuzzle(puzzleId) {
+            document.getElementById('puzzle-modal-container').classList.remove('hidden-completely');
+            document.querySelectorAll('.puzzle-content').forEach(p => p.classList.add('hidden-completely'));
+            document.getElementById(`puzzle${puzzleId}`).classList.remove('hidden-completely');
+            
+            if (puzzleId === 2) initJigsaw();
+            if (puzzleId === 3) initMemoryGame();
+        }
+
+        function closePuzzle() {
+            document.getElementById('puzzle-modal-container').classList.add('hidden-completely');
+        }
+        
+        document.getElementById('puzzle-modal-container').addEventListener('click', (e) => {
+            if (e.target.id === 'puzzle-modal-container') {
+                closePuzzle();
+            }
+        });
+
+        function solvePuzzle(puzzleId) {
+            const puzzle = gameState.puzzles.find(p => p.id === puzzleId);
+            if (puzzle && !puzzle.solved) {
+                puzzle.solved = true;
+                
+                showFeedback(true, `Teka-teki terpecahkan! Kamu mendapatkan karakter kode: "${puzzle.code}"`, () => {
+                    closePuzzle();
+                    createPins();
+
+                    const allSolved = gameState.puzzles.every(p => p.solved);
+                    if (allSolved) {
+                        setTimeout(() => {
+                           showFeedback(true, 'Semua teka-teki terpecahkan! Saatnya membuka hadiah terakhir.', () => goToScene('scene5'));
+                        }, 500);
+                    }
+                });
+            } else if (puzzle && puzzle.solved) {
+                showFeedback(false, 'Teka-teki ini sudah kamu selesaikan!');
+            }
+        }
+
+        document.querySelectorAll('#trivia-options button').forEach(button => {
+            button.addEventListener('click', () => {
+                const isCorrect = button.getAttribute('data-correct') === 'true';
+                if (isCorrect) { solvePuzzle(1); } else { showFeedback(false, 'Bukan di situ, coba lagi deh!'); }
+            });
+        });
+
+        // --- Puzzle 2: Jigsaw ---
+        let jigsawPieces = [], selectedPiece = null;
+        const correctOrder = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+        const imageUrl = 'https://picsum.photos/300/300?random=2';
+
+        function initJigsaw() {
+            const puzzleContainer = document.getElementById('jigsaw-puzzle');
+            puzzleContainer.innerHTML = '';
+            puzzleContainer.style.borderColor = '#ccc';
+            jigsawPieces = [];
+            
+            let initialOrder = shuffleArray([...correctOrder]);
+
+            for (let i = 0; i < 9; i++) {
+                const piece = document.createElement('div');
+                piece.className = 'puzzle-piece';
+                piece.dataset.index = i;
+                piece.dataset.originalIndex = initialOrder[i];
+                const x = (initialOrder[i] % 3) * -100, y = Math.floor(initialOrder[i] / 3) * -100;
+                piece.style.backgroundImage = `url('${imageUrl}')`;
+                piece.style.backgroundPosition = `${x}px ${y}px`;
+                piece.addEventListener('click', onPieceClick);
+                puzzleContainer.appendChild(piece);
+                jigsawPieces.push(piece);
+            }
+        }
+        
+        function onPieceClick(e) {
+            if (!selectedPiece) {
+                selectedPiece = e.target;
+                selectedPiece.style.border = "2px solid #3498db";
+            } else {
+                const otherPiece = e.target;
+                if (otherPiece === selectedPiece) {
+                    selectedPiece.style.border = "1px solid #ddd";
+                    selectedPiece = null;
+                    return;
+                }
+                [selectedPiece.dataset.originalIndex, otherPiece.dataset.originalIndex] = [otherPiece.dataset.originalIndex, selectedPiece.dataset.originalIndex];
+                const tempPos = selectedPiece.style.backgroundPosition;
+                selectedPiece.style.backgroundPosition = otherPiece.style.backgroundPosition;
+                otherPiece.style.backgroundPosition = tempPos;
+                
+                selectedPiece.style.border = "1px solid #ddd";
+                selectedPiece = null;
+            }
+        }
+
+        function checkJigsawWin() {
+            const currentOrder = jigsawPieces.map(p => parseInt(p.dataset.originalIndex));
+            if (JSON.stringify(currentOrder) === JSON.stringify(correctOrder)) {
+                document.getElementById('jigsaw-puzzle').style.borderColor = '#4ade80';
+                setTimeout(() => {
+                    solvePuzzle(2);
+                }, 500);
+            } else {
+                showFeedback(false, 'Susunannya belum benar. Coba lagi!');
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; }
+            return array;
+        }
+
+        // --- Puzzle 3: Memory Game ---
+        let memoryCards = ['❤️', '⭐', '🎉', '🎁', '🎂', '🎵'];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let canClick = true;
+
+        function initMemoryGame() {
+            const grid = document.getElementById('memory-game-grid');
+            grid.innerHTML = '';
+            flippedCards = [];
+            matchedPairs = 0;
+            canClick = true;
+
+            let cards = shuffleArray([...memoryCards, ...memoryCards]);
+            
+            cards.forEach(icon => {
+                const card = document.createElement('div');
+                card.className = 'memory-card';
+                card.dataset.icon = icon;
+                card.innerHTML = `
+                    <div class="card-face card-front"></div>
+                    <div class="card-face card-back">${icon}</div>
+                `;
+                card.addEventListener('click', () => onCardClick(card));
+                grid.appendChild(card);
+            });
+        }
+
+        function onCardClick(card) {
+            if (!canClick || card.classList.contains('flipped')) return;
+            
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                canClick = false;
+                const [card1, card2] = flippedCards;
+
+                if (card1.dataset.icon === card2.dataset.icon) {
+                    // Match
+                    setTimeout(() => {
+                        card1.classList.add('matched');
+                        card2.classList.add('matched');
+                        matchedPairs++;
+                        flippedCards = [];
+                        canClick = true;
+                        if (matchedPairs === memoryCards.length) {
+                            setTimeout(() => solvePuzzle(3), 500);
+                        }
+                    }, 600);
+                } else {
+                    // No match
+                    setTimeout(() => {
+                        card1.classList.remove('flipped');
+                        card2.classList.remove('flipped');
+                        flippedCards = [];
+                        canClick = true;
+                    }, 1200);
+                }
+            }
+        }
+
+        // --- Other Puzzles ---
+        function checkJournalAnswer() {
+            const answer = document.getElementById('journal-answer').value.trim().toLowerCase();
+            if (answer === 'pik') { 
+                solvePuzzle(4); 
+            } else { 
+                showFeedback(false, 'Bukan itu tujuan terjauh kita. Coba ingat lagi!'); 
+            }
+        }
+
+        function checkSecretCode() {
+            const answer = document.getElementById('secret-code-answer').value.trim().toLowerCase();
+            if (answer === 'i love you') { solvePuzzle(5); } else { showFeedback(false, 'Dekripsinya belum tepat. Coba lagi!'); }
+        }
+
+        const codeInputs = document.querySelectorAll('.code-input');
+        codeInputs.forEach((input, index) => {
+            input.addEventListener('input', () => { if (input.value && index < codeInputs.length - 1) { codeInputs[index + 1].focus(); } });
+            input.addEventListener('keydown', (e) => { if (e.key === "Backspace" && !input.value && index > 0) { codeInputs[index - 1].focus(); } });
+        });
+
+        function checkFinalCode() {
+            const enteredCode = Array.from(codeInputs).map(input => input.value).join('');
+            if (enteredCode.toLowerCase() === gameState.finalCode.toLowerCase()) { 
+                goToScene('scene6'); 
+            } else {
+                showFeedback(false, 'Kode salah! Coba periksa lagi karakter yang kamu kumpulkan.');
+                gsap.fromTo("#code-inputs", { x: -10 }, { x: 10, clearProps: "x", duration: 0.2, repeat: 3, yoyo: true });
+            }
+        }
+        
+        let voucherClicks = 0;
+        document.getElementById('gopay-voucher').addEventListener('click', () => {
+            voucherClicks++;
+            if (voucherClicks === 3) {
+                document.getElementById('voucher-amount').classList.add('hidden-completely');
+                document.getElementById('easter-egg').classList.remove('hidden-completely');
+            }
+        });
+
+        function decodeBinary() {
+            const binary = "01101001 00100000 01101100 01101111 01110110 01100101 00100000 01110101";
+            const text = binary.split(' ').map(bin => String.fromCharCode(parseInt(bin, 2))).join('');
+            const easterEggDiv = document.getElementById('easter-egg');
+            easterEggDiv.innerHTML = `<p class="text-3xl font-bold font-handwriting text-white">${text}</p>`;
+            createConfetti();
+        }
+
+        function createConfetti() {
+            const container = document.getElementById('confetti-container');
+            for (let i = 0; i < 100; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'absolute';
+                confetti.style.width = `${Math.random() * 10 + 5}px`;
+                confetti.style.height = confetti.style.width;
+                confetti.style.backgroundColor = `hsl(${Math.random() * 360}, 100%, 50%)`;
+                confetti.style.left = `${Math.random() * 100}%`;
+                confetti.style.top = `${-20}px`;
+                confetti.style.opacity = '1';
+                container.appendChild(confetti);
+                gsap.to(confetti, {
+                    y: window.innerHeight + 20,
+                    x: Math.random() * 200 - 100,
+                    rotation: Math.random() * 360 * 2,
+                    duration: Math.random() * 3 + 3,
+                    ease: "power1.out",
+                    onComplete: () => confetti.remove()
+                });
+            }
+        }
+        
+        window.onload = () => {
+            initGiftBox();
+        };
+
+    </script>
 </body>
 </html>
